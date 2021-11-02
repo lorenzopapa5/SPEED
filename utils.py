@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib as plt
 import tensorflow as tf
+import keras as K
 
 
 def plot_depth_map(dm):
@@ -44,3 +45,10 @@ def get_zipped_dataset(dataset_path_zipped, flag):
         return True
 
     return False
+
+
+def accuracy(y_true, y_pred, thr=0.05, types='percentual'):
+    correct = K.maximum((y_true / y_pred), (y_pred / y_true)) < (1 + thr)
+
+    return 100. * K.mean(correct)
+
