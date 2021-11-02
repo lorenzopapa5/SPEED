@@ -4,4 +4,4 @@ Dataset can be downloaded from [link](https://drive.google.com/drive/folders/1Hz
 
 Pretrained weights can be downloaded from [link](https://drive.google.com/drive/folders/1nz9LFSGWW_GiHkqmn7WLWzEopFxQmcXv?usp=sharing)
 
-[TODO] Add trainable code
+[Work in progress] Add trainable code
