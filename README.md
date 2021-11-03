@@ -7,7 +7,7 @@ Pretrained weights can be downloaded from [link](https://drive.google.com/drive/
 [Work in progress] Add trainable code
 
 
-| | | |
+| RGB-Input | | |
 |:-------------------------:|:-------------------------:|:-------------------------:|
 |<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="https://github.com/LorenzoPapa1699806/SPEED/blob/main/images/seq_19_RGB.png">  RGB |<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="https://github.com/LorenzoPapa1699806/SPEED/blob/main/images/seq_19_GT.png"> GT |<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="https://github.com/LorenzoPapa1699806/SPEED/blob/main/images/seq_19_Pred.png"> Prediction |
 |<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="https://github.com/LorenzoPapa1699806/SPEED/blob/main/images/seq_14_RGB.png"> RGB | <img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="https://github.com/LorenzoPapa1699806/SPEED/blob/main/images/seq_14_GT.png"> GT |<img width="1604" alt="screen shot 2017-08-07 at 12 18 15 pm" src="https://github.com/LorenzoPapa1699806/SPEED/blob/main/images/seq_14_pred.png"> Prediction |
