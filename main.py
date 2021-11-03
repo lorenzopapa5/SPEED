@@ -6,15 +6,14 @@ from network import create_SPEED_model
 from loss import accurate_obj_boundaries_loss
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.models import load_model
+from metrics import Metric
 
 
-def process():
+def process(dts_root, SIZE_TRAIN=0, SIZE_TEST=0):
     # Globals
-    root = '/content/drive/MyDrive/Tesi/'
-    dts_root = root + 'Datasets/'
     MAX_Dist_Meters_Clip = 10
     DATASET_TRAIN, DATASET_TEST, DATASET_VALID = [], [], []
-    SIZE_TRAIN, SIZE_TEST, SIZE_VALID = 0, 0, 0
 
     # DATASET SECTION
     dts_zipped_test = dts_root + 'Dataset_NYU/DenseDepth_NYU/nyu_test.zip'
@@ -75,8 +74,7 @@ def process():
             input = np.zeros((batch_size, IMG_SHAPE[0], IMG_SHAPE[1], IMG_SHAPE[2]))
             target = np.zeros((batch_size, D_IMG_SHAPE[0], D_IMG_SHAPE[1], D_IMG_SHAPE[2]))
 
-            if split_classes == 'train':
-                dataset_Path = DATASET_TRAIN
+            dataset_Path = DATASET_TRAIN
 
             for i in range(batch_size):
                 img, depth_img, _ = dataset_Path[0].load_image(IMG_SHAPE[0], D_IMG_SHAPE[0], COLOURS)
@@ -104,5 +102,22 @@ def process():
               steps_per_epoch=SIZE_TRAIN // BATCH_SIZE, callbacks=[save_callback])
 
 
+def evaluate(model):
+    ev = Metric(model, 8, 150, dts=DTS)  # ???
+    dic_acc_results = ev.update()
+    ev.display_avg()
+
+
 if __name__ == '__main__':
-    process()
+    # Training
+    root = '/content/drive/MyDrive/Tesi/'
+    dts_root = root + 'Datasets/'
+    process(dts_root=dts_root)
+
+    # Load Trained model
+    log_event = root + 'Models/Models_Giugno/Test_PAPER_ICRA2022/Test_PPMobileNetMSPP_PT3/'
+    model = load_model(log_event + 'best_model.h5', compile=False)
+    print('Model loaded\n')
+
+    # Evaluate
+    evaluate(model=model)
