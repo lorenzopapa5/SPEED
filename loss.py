@@ -1,11 +1,14 @@
 import tensorflow as tf
-import keras as K
+import keras.backend as K
 
 cos = tf.keras.losses.CosineSimilarity(axis=1)
 ones = tf.ones([16, 48, 64, 1], tf.float32)
 
 
 def accurate_obj_boundaries_loss(depth, output):
+    """
+    https://arxiv.org/abs/1803.08673
+    """
     depth_grad = tf.image.sobel_edges(depth)
     output_grad = tf.image.sobel_edges(output)
 

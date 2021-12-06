@@ -6,7 +6,7 @@ from tensorflow.python.keras import backend
 import tensorflow as tf
 
 
-def pyramid_pooling_block(input_tensor, bin_sizes, w, h, filters):
+def depthwise_separable_pyramid_pooling(input_tensor, bin_sizes, w, h, filters):
     concat_list = [input_tensor]
 
     for bin_size in bin_sizes:
@@ -20,7 +20,7 @@ def pyramid_pooling_block(input_tensor, bin_sizes, w, h, filters):
     return tf.keras.layers.concatenate(concat_list)
 
 
-def my_pyramid_pooling_block(input_tensor, bin_sizes, w, h, filters, name):
+def depthwise_mixed_separable_pyramid_pooling(input_tensor, bin_sizes, w, h, filters, name):
     concat_list = []
 
     for bin_size in bin_sizes:
@@ -31,8 +31,6 @@ def my_pyramid_pooling_block(input_tensor, bin_sizes, w, h, filters, name):
         x = tf.keras.layers.Lambda(lambda x: tf.image.resize(x, (w, h)))(x)
 
         concat_list.append(x)
-
-    print(bin_sizes)
 
     x_even = Concatenate()([concat_list[0], concat_list[2]])
     x_even = ReLU()(x_even)
@@ -101,7 +99,7 @@ def _depthwise_conv_block(inputs,
     return x
 
 
-def SPP_Encoder(input_shape, alpha=1.0, depth_multiplier=1):
+def SPEED_Encoder(input_shape, alpha=1.0, depth_multiplier=1):
     img_input = layers.Input(shape=input_shape)
 
     x = _conv_block(img_input, 32, alpha, strides=(2, 2))
@@ -119,7 +117,7 @@ def SPP_Encoder(input_shape, alpha=1.0, depth_multiplier=1):
         x, 512, alpha, depth_multiplier, strides=(2, 2), block_id=6)
     x = _depthwise_conv_block(x, 512, alpha, depth_multiplier, block_id=7)
 
-    x = pyramid_pooling_block(x, [2, 4, 6, 8], x.shape[1], x.shape[2])
+    x = depthwise_separable_pyramid_pooling(x, [2, 4, 6, 8], x.shape[1], x.shape[2], filters=128)
     # x = _depthwise_conv_block(x, 512, alpha, depth_multiplier, block_id=8)
     # x = _depthwise_conv_block(x, 512, alpha, depth_multiplier, block_id=9)
     # x = _depthwise_conv_block(x, 512, alpha, depth_multiplier, block_id=10)
@@ -128,7 +126,6 @@ def SPP_Encoder(input_shape, alpha=1.0, depth_multiplier=1):
     x = _depthwise_conv_block(x, 1024, alpha, depth_multiplier, strides=(2, 2), block_id=12)
     x = _depthwise_conv_block(x, 256, alpha, depth_multiplier, block_id=13)  # 1024
 
-    # Create model.
     model = Model(img_input, x, name='SPP_encoder')
 
     return model
@@ -137,15 +134,15 @@ def SPP_Encoder(input_shape, alpha=1.0, depth_multiplier=1):
 def upsample_layer(tensor, filters, name, concat_with, base_model):
     def HPO2(filters_value):
         for i in range(filters_value, 0, -1):
-            if ((i & (i - 1)) == 0):
+            if (i & (i - 1)) == 0:
                 return i
 
     if name == 'up1':
         up_i = Conv2DTranspose(filters=filters, kernel_size=3, strides=2, padding='same', dilation_rate=1,
                                name=name + '_upconv', use_bias=False)(tensor)
     else:
-        up_i = my_pyramid_pooling_block(input_tensor=tensor, bin_sizes=[2, 4, 6, 8], w=tensor.shape[1],
-                                        h=tensor.shape[2], filters=filters, name=name)
+        up_i = depthwise_mixed_separable_pyramid_pooling(input_tensor=tensor, bin_sizes=[2, 4, 6, 8], w=tensor.shape[1],
+                                                         h=tensor.shape[2], filters=filters, name=name)
         up_i = Conv2DTranspose(filters=filters, kernel_size=3, strides=2, padding='same', dilation_rate=1,
                                name=name + '_upconv_final', use_bias=False)(up_i)
 

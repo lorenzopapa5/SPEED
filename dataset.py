@@ -1,17 +1,13 @@
-import random, os
+import os
+import random
 import numpy as np
 import tensorflow as tf
+from PIL import Image
+
 from utils import resize_keeping_aspect_ratio
 
-"""
-## NYU
-  * Indoor img (480, 640, 3) depth (480, 640, 1) both in png -> range between 0.5 to 10 meters
-  * 654 Test and 7268 Train images (NYUv2_Labelled)  [Dataset Parts](https://cs.nyu.edu/~silberman/datasets/nyu_depth_v2.html#raw_parts)
-  * 654 Test and 50688 Train images (NYUv1)
-"""
 
-
-class NYU2_DataLoader():
+class NYU2_DataLoader:
 
     def __init__(self, path, dts_type):
         self.dataset = path
@@ -51,6 +47,7 @@ class NYU2_DataLoader():
                         self.y.append(scene + '/' + el)
                     else:
                         raise SystemError('Type image error (train)')
+
         else:
             raise SystemError('Problem in the path')
 
@@ -69,13 +66,11 @@ class NYU2_DataLoader():
         return self.info
 
     def get_test_dataset(self):
-        img_path = self.dataset + 'eigen_test_rgb.npy'
-        depth_path = self.dataset + 'eigen_test_depth.npy'
-        crop = self.dataset + 'eigen_test_crop.npy'
+        img_path = self.dataset + 'test_rgb.npy'
+        depth_path = self.dataset + 'test_depth.npy'
 
         rgb = np.load(img_path)
         depth = np.load(depth_path)
-        crop = np.load(crop)
 
         self.x = rgb
         self.y = depth
@@ -88,7 +83,6 @@ class NYU2_DataLoader():
         if index is None:
             index = np.random.randint(0, self.info)
 
-        # Load Image
         if self.dts_type == 'test':
             if colors_image:
                 img = self.x[index]
@@ -105,14 +99,12 @@ class NYU2_DataLoader():
                 img = tf.io.read_file(self.dataset + self.x[index])
                 img = tf.io.decode_png(img, channels=1)
 
-        # Load Depth Image
         if self.dts_type == 'test':
             depth = np.expand_dims(self.y[index], axis=-1)
         else:
             depth = tf.io.read_file(self.dataset + self.y[index])
             depth = tf.io.decode_png(depth, channels=1)
 
-        # Resize the image to a square image manteining the proportion
         img = resize_keeping_aspect_ratio(img, W_IMG_reduced_size)
         depth = resize_keeping_aspect_ratio(depth, W_D_reduced_size)
 
@@ -122,4 +114,92 @@ class NYU2_DataLoader():
             depth /= 255
             depth = tf.clip_by_value(depth * 1000, 50, 1000)
 
-        return img/255, depth, index
+        return img/256, depth, index
+
+
+class DIML_DataLoader:
+
+    def __init__(self, path, type_dts):
+        self.dataset = path
+        self.type_dts = type_dts
+        self.x = []
+        self.y = []
+        self.info = 0
+
+    def shuffle_dts(self):
+        tmp_list = list(zip(self.x, self.y))
+        random.shuffle(tmp_list)
+        x_tmp, y_tmp = zip(*tmp_list)
+        self.x = list(x_tmp)
+        self.y = list(y_tmp)
+
+        return self.x, self.y
+
+    def get_train_dataset(self):
+        skipped_img = 0
+        folders = os.listdir(self.dataset)
+        for folder in folders:
+            scenarios = os.listdir(self.dataset + folder)
+            for scene in scenarios:
+                color_img = os.listdir(self.dataset + folder + '/' + scene + '/col/')
+                depth_img = os.listdir(self.dataset + folder + '/' + scene + '/up_png/')
+                depth_img.sort()
+                color_img.sort()
+                for col, dep in zip(color_img, depth_img):
+                    if col.split('_')[2:5] != dep.split('_')[2:5]:
+                        skipped_img += 1
+                        pass
+                    else:
+                        self.x.append(folder + '/' + scene + '/col/' + col)
+                        self.y.append(folder + '/' + scene + '/up_png/' + dep)
+
+        self.x.sort()
+        self.y.sort()
+
+        self.info = len(self.x)
+
+        return self.info, skipped_img
+
+    def get_test_dataset(self):
+        skipped_img = 0
+        folders = os.listdir(self.dataset)
+        rgb_img = os.listdir(self.dataset + folders[0])
+        d_img = os.listdir(self.dataset + folders[1])
+        rgb_img.sort()
+        d_img.sort()
+        for col, dep in zip(rgb_img, d_img):
+            if col.split('_')[2:5] != dep.split('_')[2:5]:
+                skipped_img += 1
+                pass
+            else:
+                self.x.append(folders[0] + '/' + col)
+                self.y.append(folders[1] + '/' + dep)
+
+        self.x.sort()
+        self.y.sort()
+
+        self.info = len(self.x)
+
+        return self.info, skipped_img
+
+    def load_image(self, W_IMG_reduced_size=792, W_D_reduced_size=792, colors_image=True, index=None):
+        if index is None:
+            index = np.random.randint(0, self.info)
+
+        depth = Image.open(self.dataset + self.y[index])
+        depth = np.expand_dims(np.array(depth), axis=-1)
+
+        if colors_image:
+            img = Image.open(self.dataset + self.x[index]).convert('RGB')
+            img = np.array(img)
+        else:
+            img = tf.io.read_file(self.dataset + self.x[index])
+            img = tf.io.decode_png(img, channels=1)
+
+        img = resize_keeping_aspect_ratio(img, W_IMG_reduced_size)
+        depth = resize_keeping_aspect_ratio(depth, W_D_reduced_size)
+
+        img = img / 256
+        depth = depth / 10
+
+        return img, depth, index
