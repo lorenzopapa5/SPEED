@@ -1,4 +1,4 @@
-# SPEED: Separable Pyramidal pooling EncodEr-Decoder for Real-TimeMonocular Depth Estimation on low-resource settings
+# [SPEED: Separable Pyramidal pooling EncodEr-Decoder for Real-TimeMonocular Depth Estimation on low-resource settings](https://ieeexplore.ieee.org/document/9762984)
 
 <!--- Dataset can be downloaded from [link](https://drive.google.com/drive/folders/1Hzf2NrTJjgcV6zeWcLxJD8J0HvJ_urFy?usp=sharing) -->
 
